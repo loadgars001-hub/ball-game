@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Ball Game
+Comment=Physics ball puzzle game with Lua scripting and local network multiplayer
+Exec=ball_game
+Icon=ball_game
+Type=Application
+Categories=Game;
+Terminal=false
