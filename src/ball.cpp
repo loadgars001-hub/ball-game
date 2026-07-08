@@ -32,7 +32,7 @@ void Ball::createBody(PhysicsWorld& world, sf::Vector2f startPos) {
     bd.type = b2_dynamicBody;
     bd.position = pxToM(startPos);
     bd.linearDamping = LINEAR_DAMPING;
-    bd.bullet = true; // шар может двигаться быстро — включаем непрерывную коллизию против проскакивания сквозь тонкие стены
+    bd.bullet = true;
     body = world.world().CreateBody(&bd);
 
     b2CircleShape circle;
@@ -63,7 +63,7 @@ void Ball::syncFromBody() {
     if (!body) return;
     pos = mToPx(body->GetPosition());
     b2Vec2 v = body->GetLinearVelocity();
-    vel = mToPx(v); // скорость (м/с) конвертируется той же формулой что и позиция (px/с)
+    vel = mToPx(v);
 }
 
 void Ball::pushToBody() {
@@ -73,7 +73,6 @@ void Ball::pushToBody() {
 
 void Ball::setColor(sf::Color col) {
     shape.setFillColor(col);
-    // обводка — затемнённая версия основного цвета
     shape.setOutlineColor(sf::Color(col.r / 2, col.g / 2, col.b / 2));
 }
 
@@ -90,7 +89,6 @@ void Ball::tryPush(sf::Vector2f mouse, sf::Vector2f prevMouse, bool pressed, boo
             body->ApplyLinearImpulseToCenter(body->GetMass() * pxToM(impulseVelPx), true);
         }
     }
-    // Зажато — передаём импульс движения мыши
     if (pressed && wasPressed) {
         sf::Vector2f diff = pos - mouse;
         float dist = vec2len(diff);
@@ -105,7 +103,6 @@ void Ball::tryPush(sf::Vector2f mouse, sf::Vector2f prevMouse, bool pressed, boo
 }
 
 void Ball::draw(sf::RenderWindow& window) const {
-    // Тень
     sf::CircleShape sh = shadowShape;
     sh.setPosition(pos.x, window.getSize().y - 10.f);
     float sc = 0.3f + 0.7f * (pos.y / (float)window.getSize().y);
