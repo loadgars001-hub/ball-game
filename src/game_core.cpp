@@ -5,15 +5,11 @@
 
 const float Game::GRID_SIZE = 40.f;
 
-// ── Game ────────────────────────────────────────────────────────────────────
 Game::Game() {
-    // Полноэкранный режим
+    
     sf::VideoMode vm = sf::VideoMode::getDesktopMode();
     window.create(vm, "Ball Game", sf::Style::Fullscreen);
-    window.setKeyRepeatEnabled(true); // гарантируем повтор при удержании клавиши (важно для Backspace в редакторе скриптов)
-    // Только один механизм ограничения кадров: vsync. Двойное ограничение
-    // (SFML sleep-лимитер + драйверный vsync одновременно) вызывало
-    // периодические микро-подвисания при перетаскивании шара мышью.
+    window.setKeyRepeatEnabled(true); 
     window.setVerticalSyncEnabled(true);
 
     fontOk = font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf");
@@ -21,8 +17,7 @@ Game::Game() {
         fontOk = font.loadFromFile("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf");
 
     sf::Vector2f screen = {(float)vm.width, (float)vm.height};
-
-    // Кнопки главного меню (центр экрана)
+    
     float bw = 280.f, bh = 70.f;
     float pairGap = 20.f;
     float pairW = bw * 2.f + pairGap;
@@ -32,24 +27,19 @@ Game::Game() {
     btnColorRect  = sf::FloatRect(screen.x/2.f - bw/2.f, screen.y/2.f + 20.f, bw, bh);
     btnExitRect   = sf::FloatRect(screen.x/2.f - bw/2.f, screen.y/2.f + 110.f, bw, bh);
 
-    // Подменю мультиплеера (открывается по клику на btnMultiplayerRect):
-    // три варианта друг под другом + Back. btnMultiplayerRect переиспользуется
-    // как "Same Screen" внутри этого экрана (тот же rect, другой текст/контекст).
     btnHostNetRect = sf::FloatRect(screen.x/2.f - bw/2.f, screen.y/2.f + 20.f, bw, bh);
     btnJoinNetRect = sf::FloatRect(screen.x/2.f - bw/2.f, screen.y/2.f + 110.f, bw, bh);
     btnMpBackRect  = sf::FloatRect(screen.x/2.f - bw/2.f, screen.y/2.f + 200.f, bw, bh);
 
-    // Палитра доступных цветов шара
-    ballColors[0] = sf::Color(70, 140, 255);  // синий (по умолчанию)
-    ballColors[1] = sf::Color(230, 70, 70);   // красный
-    ballColors[2] = sf::Color(70, 200, 100);  // зелёный
-    ballColors[3] = sf::Color(240, 190, 40);  // жёлтый
-    ballColors[4] = sf::Color(190, 80, 220);  // фиолетовый
+    ballColors[0] = sf::Color(70, 140, 255); 
+    ballColors[1] = sf::Color(230, 70, 70); 
+    ballColors[2] = sf::Color(70, 200, 100); 
+    ballColors[3] = sf::Color(240, 190, 40); 
+    ballColors[4] = sf::Color(190, 80, 220); 
     selectedColor = 0;
     ball.setColor(ballColors[selectedColor]);
-    ball2.setColor(sf::Color(255, 140, 30)); // второй игрок — фиксированный оранжевый, чтобы всегда отличался от первого
+    ball2.setColor(sf::Color(255, 140, 30)); 
 
-    // Раскладка свотчей в экране выбора цвета
     float swSize = 110.f, swGap = 30.f;
     float totalW = COLOR_COUNT * swSize + (COLOR_COUNT - 1) * swGap;
     float startX = screen.x/2.f - totalW/2.f;
@@ -59,7 +49,6 @@ Game::Game() {
     }
     btnColorBackRect = sf::FloatRect(screen.x/2.f - 100.f, screen.y * 0.78f, 200.f, 60.f);
 
-    // ── Панель инструментов редактора (сверху) ──────────────────────────
     float toolW = 120.f, toolH = 50.f, toolGap = 10.f;
     float toolY = 14.f;
     float tx = 16.f;
@@ -69,7 +58,6 @@ Game::Game() {
     btnToolEraseRect = sf::FloatRect(tx, toolY, toolW, toolH); tx += toolW + toolGap;
     btnToolItemRect  = sf::FloatRect(tx, toolY, toolW, toolH);
 
-    // Под-панель выбора пресета предмета (видна только когда выбран инструмент Item)
     float pw = 110.f, ph = 40.f, py = toolY + toolH + 8.f;
     float px = 16.f;
     btnItemCoinRect       = sf::FloatRect(px, py, pw, ph); px += pw + toolGap;
@@ -78,7 +66,6 @@ Game::Game() {
     btnItemSpinBoardsRect = sf::FloatRect(px, py, pw, ph); px += pw + toolGap;
     btnItemBlankRect      = sf::FloatRect(px, py, pw, ph);
 
-    // Кнопки справа: Save / Play / Clear / Back
     float rbw = 130.f, rbh = 50.f;
     float rx = screen.x - 16.f - rbw;
     btnEditBackRect  = sf::FloatRect(rx, toolY, rbw, rbh); rx -= rbw + toolGap;
@@ -86,7 +73,6 @@ Game::Game() {
     btnEditPlayRect  = sf::FloatRect(rx, toolY, rbw, rbh); rx -= rbw + toolGap;
     btnEditSaveRect  = sf::FloatRect(rx, toolY, rbw, rbh);
 
-    // ── Кнопки текстового редактора скриптов ────────────────────────────
     btnScriptApplyRect  = sf::FloatRect(screen.x/2.f - 330.f, screen.y - 80.f, 200.f, 56.f);
     btnScriptCancelRect = sf::FloatRect(screen.x/2.f - 100.f, screen.y - 80.f, 200.f, 56.f);
     btnScriptPasteRect  = sf::FloatRect(screen.x/2.f + 130.f, screen.y - 80.f, 200.f, 56.f);
@@ -104,9 +90,6 @@ void Game::setupPhysicsForLevel() {
     ball1Reached = false;
     ball2Reached = false;
     if (isMultiplayer) {
-        // Второй шар стартует чуть в стороне от первого (простое смещение по
-        // диагонали); для процедурных уровней старт обычно даёт немного
-        // свободного места вокруг себя, этого достаточно для "простого" мультиплеера.
         sf::Vector2f start2 = level.ballStart + sf::Vector2f(Ball::RADIUS * 2.5f, 0.f);
         ball2.createBody(physicsWorld, start2);
     }
@@ -132,8 +115,6 @@ void Game::nextLevel() {
     level = generateRandomLevel(screen, stageNum, &scriptEngine);
     setupPhysicsForLevel();
 }
-
-// ── Сетевой мультиплеер ──────────────────────────────────────────────────
 
 void Game::startNetworkHost() {
     isNetworked   = true;
@@ -165,7 +146,6 @@ void Game::startNetworkClient() {
 
 void Game::updateNetHostWaiting() {
     if (netSession.pollHostWaiting()) {
-        // Клиент подключился — генерируем уровень, шлём его описание и стартуем игру.
         stageNum    = 1;
         state       = State::Playing;
         returnStateAfterPlay = State::Menu;
@@ -185,9 +165,6 @@ void Game::updateNetHostWaiting() {
 
 void Game::updateNetClientSearching() {
     if (netSession.pollClientSearching()) {
-        // TCP-соединение установлено; сам уровень придёт отдельным пакетом
-        // чуть позже — ждём его прямо в состоянии Playing (см. updateNetworkClientPlaying),
-        // пока просто помечаем, что уровень ещё не получен.
         level = Level{};
         level.name = "Waiting for level...";
         state = State::Playing;
@@ -233,12 +210,6 @@ void Game::applyNetLevelInfo(const NetLevelInfo& info) {
         const NetWallInfo& nw = info.walls[i];
         level.walls.emplace_back(nw.x, nw.y, nw.w, nw.h,
                                   sf::Color(nw.r, nw.g, nw.b));
-        // Клиент не запускает физику/скрипты сам — просто отмечает, что
-        // позицию этой стены будут присылать каждый кадр, для отрисовки.
-        // amplitude=1 здесь используется только как косметический маркер для
-        // Wall::draw() (белая обводка "движущейся" стены) — сама физика и
-        // Wall::update()/createBody() на клиенте никогда не вызываются, так
-        // что это не активирует никакой реальной логики движения.
         if (nw.kinematic) {
             level.walls.back().amplitude = 1.f;
             kinematicWallIndices.push_back(i);
@@ -252,9 +223,6 @@ void Game::applyNetLevelInfo(const NetLevelInfo& info) {
 }
 
 void Game::updateNetworkHostPlaying(float dt) {
-    // Принимаем последний присланный ввод клиента (может не быть нового
-    // пакета в этом кадре — тогда просто продолжаем использовать прошлый,
-    // аналогично тому, как локально держится состояние зажатой кнопки мыши).
     NetInputState in;
     while (netSession.receiveInput(in)) lastClientInput = in; // выбираем самый свежий из накопившихся
 
@@ -306,7 +274,6 @@ void Game::updateNetworkHostPlaying(float dt) {
 }
 
 void Game::updateNetworkClientPlaying(float dt) {
-    // Пока не пришло описание уровня — ждём его молча (см. renderNetClientSearching).
     NetLevelInfo li;
     if (level.walls.empty() && level.goalRadius == 0.f) {
         if (netSession.receiveLevelInfo(li)) {
@@ -324,7 +291,7 @@ void Game::updateNetworkClientPlaying(float dt) {
 
     NetFrameState st;
     bool gotAny = false;
-    while (netSession.receiveFrameState(st)) gotAny = true; // берём самое свежее из накопившихся пакетов
+    while (netSession.receiveFrameState(st)) gotAny = true;
     if (gotAny) {
         lastNetFrameState = st;
         ball.pos  = {st.ball1X, st.ball1Y};
@@ -413,7 +380,7 @@ void Game::handleEvents() {
 
             if (state == State::ScriptEdit) {
                 handleScriptEditorKey(ev.key.code, ctrl);
-                continue; // в редакторе скриптов остальные горячие клавиши не обрабатываем
+                continue; 
             }
 
             if (ev.key.code == sf::Keyboard::Escape) {
@@ -506,8 +473,6 @@ void Game::update(float dt) {
         stateTimer -= dt;
         if (stateTimer <= 0.f) {
             if (isNetworked) {
-                // Сетевая игра ограничена одним уровнем за сессию (см. заметку
-                // в network.hpp) — после победы оба игрока просто возвращаются в меню.
                 netSession.disconnect();
                 isNetworked = false;
                 isMultiplayer = false;
@@ -528,7 +493,7 @@ void Game::update(float dt) {
         return;
     }
 
-    level.update(dt, &scriptEngine); // вычисляем желаемое движение платформ (задаёт скорость кинематических тел), обновляем предметы
+    level.update(dt, &scriptEngine); 
 
     sf::Vector2i mi = sf::Mouse::getPosition(window);
     sf::Vector2f mouse = {(float)mi.x, (float)mi.y};
@@ -541,38 +506,26 @@ void Game::update(float dt) {
             totalPushes++;
     }
 
-    // Импульс от мыши применяется к Box2D телу до шага симуляции; сам расчёт
-    // ещё использует ball.pos, синхронизированный на предыдущем кадре.
-    // В кооп-режиме оба шара слушают одну и ту же мышь — сработает толчок
-    // того шара, к которому курсор оказался достаточно близко (порог внутри tryPush).
     ball.tryPush(mouse, prevMouse, pressed, wasPressed);
     if (isMultiplayer)
         ball2.tryPush(mouse, prevMouse, pressed, wasPressed);
     wasPressed = pressed;
     prevMouse  = mouse;
 
-    // Box2D целиком считает гравитацию, столкновения шара со стенами/границами
-    // экрана и движение кинематических платформ — вручную это больше не делаем.
     physicsWorld.step(dt);
 
-    // Считываем результат симуляции обратно в pos/vel (публичные поля,
-    // которые использует рендер и Lua-скрипты предметов) и в rect стен.
     ball.syncFromBody();
     if (isMultiplayer) ball2.syncFromBody();
     level.syncFromBodies();
 
-    // Касания предметов (Lua on_touch) — скрипт может изменить ball.vel напрямую
     for (auto& it : level.items) {
         it.checkTouch(scriptEngine, ball, level.spinners);
         if (isMultiplayer) it.checkTouch(scriptEngine, ball2, level.spinners);
     }
 
-    // Изменения ball.vel из Lua-скриптов нужно вернуть в Box2D тело, иначе
-    // на следующем шаге симуляции они будут потеряны (Box2D — источник истины).
     ball.pushToBody();
     if (isMultiplayer) ball2.pushToBody();
 
-    // Проверка цели
     if (!isMultiplayer) {
         float dist = vec2len(ball.pos - level.goal);
         if (dist < level.goalRadius + Ball::RADIUS * 0.5f) {
@@ -580,9 +533,6 @@ void Game::update(float dt) {
             stateTimer = 2.0f;
         }
     } else {
-        // Кооп: цель засчитывается "залипающе" — раз шар побывал на месте,
-        // это не сбрасывается, даже если он потом укатится. Уровень пройден,
-        // когда ОБА игрока хотя бы раз побывали на цели.
         if (!ball1Reached && vec2len(ball.pos - level.goal) < level.goalRadius + Ball::RADIUS * 0.5f)
             ball1Reached = true;
         if (!ball2Reached && vec2len(ball2.pos - level.goal) < level.goalRadius + Ball::RADIUS * 0.5f)
@@ -625,19 +575,15 @@ void Game::render() {
         return;
     }
     if (state == State::Playing && isNetworked && !isNetworkHost && level.walls.empty() && level.goalRadius == 0.f) {
-        // Клиент подключился, но ещё не получил описание уровня от хоста —
-        // тот же экран ожидания, чтобы не мигнуть пустым чёрным кадром.
         renderNetClientSearching();
         return;
     }
 
     window.clear(sf::Color(20, 22, 32));
 
-    // Стены
     for (const auto& wall : level.walls)
         wall.draw(window);
 
-    // Предметы
     for (const auto& it : level.items)
         it.draw(window);
 
