@@ -24,8 +24,6 @@ sf::Vector2f Game::snapToGrid(sf::Vector2f p) const {
 }
 
 void Game::handleEditorMouseDown(sf::Vector2f mouse, sf::Mouse::Button button) {
-    // Панель инструментов теперь в две строки: основные инструменты (0-64) +
-    // под-панель пресетов предметов (64-114, видна только при инструменте Item).
     float panelBottom = (editTool == EditTool::Item) ? 114.f : 64.f;
 
     if (mouse.y <= panelBottom) {
@@ -46,7 +44,7 @@ void Game::handleEditorMouseDown(sf::Vector2f mouse, sf::Mouse::Button button) {
             if (pointInRect(mouse, btnItemSpinBoardsRect)) { editItemPreset = ItemPreset::SpinBoards; return; }
             if (pointInRect(mouse, btnItemBlankRect)) { editItemPreset = ItemPreset::Blank; return; }
         }
-        return; // клик в области панели, но не по кнопке — игнорируем
+        return;
     }
 
     if (button != sf::Mouse::Left) return;
@@ -59,7 +57,6 @@ void Game::handleEditorMouseDown(sf::Vector2f mouse, sf::Mouse::Button button) {
             editLevel.goal = snapToGrid(mouse);
             break;
         case EditTool::Erase: {
-            // Сначала проверяем предметы (они обычно меньше и сверху)
             bool erased = false;
             for (int i = (int)editLevel.items.size() - 1; i >= 0; --i) {
                 sf::Vector2f d = editLevel.items[i].pos - mouse;
@@ -82,8 +79,6 @@ void Game::handleEditorMouseDown(sf::Vector2f mouse, sf::Mouse::Button button) {
             break;
         }
         case EditTool::Wall: {
-            // Ctrl+клик по уже существующей скриптовой/обычной стене открывает
-            // редактор скрипта для неё (вместо рисования новой стены).
             bool ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
                         sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
             if (ctrl) {
@@ -101,8 +96,6 @@ void Game::handleEditorMouseDown(sf::Vector2f mouse, sf::Mouse::Button button) {
             break;
         }
         case EditTool::Item: {
-            // Клик по существующему предмету открывает редактор его скрипта;
-            // клик по пустому месту ставит новый предмет с выбранным пресетом.
             for (int i = (int)editLevel.items.size() - 1; i >= 0; --i) {
                 sf::Vector2f d = editLevel.items[i].pos - mouse;
                 if (std::sqrt(d.x*d.x + d.y*d.y) <= editLevel.items[i].radius) {
@@ -138,7 +131,6 @@ void Game::handleEditorMouseUp(sf::Vector2f mouse) {
     float w = std::abs(end.x - editDragStart.x);
     float h = std::abs(end.y - editDragStart.y);
 
-    // Минимальный размер — одна ячейка сетки, чтобы клик без перетаскивания тоже ставил блок
     if (w < GRID_SIZE * 0.5f) w = GRID_SIZE;
     if (h < GRID_SIZE * 0.5f) h = GRID_SIZE;
 
@@ -167,7 +159,6 @@ void Game::handleEditorKey(sf::Keyboard::Key key) {
 
 void Game::editorSaveLevel() {
     std::string dir = customLevelsDir();
-    // Имя файла на основе счётчика, чтобы не перезаписывать прошлые уровни
     static int saveCounter = 1;
     std::string path = dir + "/level_" + std::to_string(saveCounter++) + ".lvl";
 
@@ -185,7 +176,7 @@ void Game::editorPlayLevel() {
     returnStateAfterPlay = State::Editor;
     stateTimer  = 0.f;
     totalPushes = 0;
-    isMultiplayer = false; // тест уровня из редактора всегда одиночный, для простоты и предсказуемости
+    isMultiplayer = false;
     setupPhysicsForLevel();
     state = State::Playing;
 }
@@ -202,7 +193,6 @@ void Game::renderEditor() {
 
     sf::Vector2f sz = {(float)window.getSize().x, (float)window.getSize().y};
 
-    // ── Сетка ────────────────────────────────────────────────────────────
     if (editGridSnap) {
         sf::VertexArray grid(sf::Lines);
         sf::Color gridCol(60, 64, 78, 120);
@@ -217,15 +207,12 @@ void Game::renderEditor() {
         window.draw(grid);
     }
 
-    // ── Стены ────────────────────────────────────────────────────────────
     for (const auto& w : editLevel.walls)
         w.draw(window);
 
-    // ── Предметы ─────────────────────────────────────────────────────────
     for (const auto& it : editLevel.items)
         it.draw(window);
 
-    // ── Превью рисуемой стены ───────────────────────────────────────────
     if (editTool == EditTool::Wall && editDrawing) {
         sf::Vector2i mi = sf::Mouse::getPosition(window);
         sf::Vector2f cur = snapToGrid({(float)mi.x, (float)mi.y});
@@ -242,7 +229,6 @@ void Game::renderEditor() {
         window.draw(preview);
     }
 
-    // ── Старт и цель ─────────────────────────────────────────────────────
     sf::CircleShape startMark(16.f);
     startMark.setOrigin(16.f, 16.f);
     startMark.setPosition(editLevel.ballStart);
@@ -259,7 +245,6 @@ void Game::renderEditor() {
     goalMark.setOutlineColor(sf::Color(255, 220, 60));
     window.draw(goalMark);
 
-    // ── Панель инструментов ──────────────────────────────────────────────
     float panelH = (editTool == EditTool::Item) ? 114.f : 64.f;
     sf::RectangleShape topBar({sz.x, panelH});
     topBar.setPosition(0.f, 0.f);
@@ -297,7 +282,6 @@ void Game::renderEditor() {
     drawToolButton(btnEditClearRect, "Clear",     false, sf::Color(110, 60, 30));
     drawToolButton(btnEditBackRect,  "Back (Esc)",false, sf::Color(70, 70, 80));
 
-    // Под-панель выбора пресета предмета
     if (editTool == EditTool::Item) {
         drawToolButton(btnItemCoinRect,  "Coin",  editItemPreset == ItemPreset::Coin,  sf::Color(120, 100, 10));
         drawToolButton(btnItemTrapRect,  "Trap",  editItemPreset == ItemPreset::Trap,  sf::Color(120, 30, 30));
@@ -309,13 +293,11 @@ void Game::renderEditor() {
                      {16.f, panelH + 6.f}, sf::Color(150,150,150));
     }
 
-    // Подсказка по сетке
     if (fontOk) {
         std::string gridHint = std::string("Grid snap: ") + (editGridSnap ? "ON" : "OFF") + " (G)";
         drawText(window, font, gridHint, 14, {sz.x - 110.f, panelH + 6.f}, sf::Color(150,150,150));
     }
 
-    // Статусное сообщение (например, "Saved: ...")
     if (fontOk && editStatusTimer > 0.f && !editStatusMsg.empty()) {
         drawText(window, font, editStatusMsg, 20, {sz.x/2.f, panelH + 26.f}, sf::Color(140, 230, 140), true);
     }
