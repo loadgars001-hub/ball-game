@@ -17,7 +17,7 @@ void Game::handleMenuClick(sf::Vector2f mouse) {
 
 void Game::handleMultiplayerMenuClick(sf::Vector2f mouse) {
     if (pointInRect(mouse, btnMultiplayerRect)) {
-        startNewGame(true); // Same Screen — локальный кооп-мультиплеер, общая мышь
+        startNewGame(true); 
     } else if (pointInRect(mouse, btnHostNetRect)) {
         startNetworkHost();
     } else if (pointInRect(mouse, btnJoinNetRect)) {
@@ -99,8 +99,6 @@ void Game::renderMultiplayerMenu() {
                      sf::Color::White, true);
     };
 
-    // btnMultiplayerRect переиспользуется здесь как "Same Screen" — та же
-    // геометрия кнопки, что и на главном меню, но другой смысл на этом экране.
     drawButton(btnMultiplayerRect, "Same Screen (shared mouse)", sf::Color(30, 100, 130));
     drawButton(btnHostNetRect, "Host Network Game", sf::Color(20, 110, 90));
     drawButton(btnJoinNetRect, "Join Network Game", sf::Color(150, 90, 20));
@@ -117,7 +115,6 @@ void Game::renderColorPicker() {
     drawText(window, font, "Choose Ball Color", 48, {sz.x/2.f, sz.y * 0.22f},
              sf::Color(220, 220, 220), true);
 
-    // Предпросмотр текущего выбранного цвета — большой шар по центру
     sf::CircleShape preview(60.f);
     preview.setOrigin(60.f, 60.f);
     preview.setPosition(sz.x/2.f, sz.y * 0.40f);
@@ -130,7 +127,6 @@ void Game::renderColorPicker() {
     sf::Vector2i mi = sf::Mouse::getPosition(window);
     sf::Vector2f mouse = {(float)mi.x, (float)mi.y};
 
-    // Свотчи 5 цветов
     for (int i = 0; i < COLOR_COUNT; ++i) {
         const sf::FloatRect& r = colorSwatchRects[i];
         bool hover = pointInRect(mouse, r);
@@ -145,7 +141,6 @@ void Game::renderColorPicker() {
         window.draw(sw);
     }
 
-    // Кнопка "назад"
     bool backHover = pointInRect(mouse, btnColorBackRect);
     sf::RectangleShape backRect({btnColorBackRect.width, btnColorBackRect.height});
     backRect.setPosition(btnColorBackRect.left, btnColorBackRect.top);
