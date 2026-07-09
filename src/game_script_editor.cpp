@@ -12,7 +12,6 @@ void Game::openScriptEditor(ScriptTargetKind kind, int index) {
     } else if (kind == ScriptTargetKind::Wall && index >= 0 && index < (int)editLevel.walls.size()) {
         scriptEditText = editLevel.walls[index].scriptSource;
         if (scriptEditText.empty()) {
-            // стена ещё не скриптовая — подставляем стартовый шаблон движения платформы
             scriptEditText =
                 "-- Custom platform movement.\n"
                 "local SPEED = 1.0\n"
@@ -52,10 +51,6 @@ void Game::applyScriptEditorChanges() {
 }
 
 void Game::handleScriptEditorTextEntered(sf::Uint32 unicode) {
-    // Пока зажат Ctrl, TextEntered всё равно может присылать unicode базовой
-    // буквы горячей клавиши (например 'v' при Ctrl+V) в зависимости от ОС —
-    // игнорируем такой ввод здесь, чтобы Ctrl+V/Ctrl+C/Ctrl+S не добавляли
-    // в текст лишний символ вдобавок к своему обычному действию.
     bool ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
                 sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
     if (ctrl) return;
@@ -78,8 +73,6 @@ void Game::handleScriptEditorTextEntered(sf::Uint32 unicode) {
 }
 
 void Game::pasteClipboardIntoScript() {
-    // toAnsiString() достаточно — Lua-скрипты у нас чистый ASCII
-    // (нерусские комментарии пользователь тоже может вставить, но это его выбор).
     std::string pasted = sf::Clipboard::getString().toAnsiString();
     // Нормализуем переносы строк: \r\n -> \n, одинокие \r -> \n
     std::string normalized;
@@ -113,15 +106,11 @@ void Game::handleScriptEditorKey(sf::Keyboard::Key key, bool ctrl) {
         return;
     }
     if (ctrl && key == sf::Keyboard::X) {
-        // "Вырезать": копируем всё и очищаем — полноценного выделения текста
-        // в этом простом редакторе нет, так что X ведёт себя как copy+clear.
         sf::Clipboard::setString(scriptEditText);
         scriptEditText.clear();
         return;
     }
     if (ctrl && key == sf::Keyboard::A) {
-        // "Выделить всё" без реального выделения не имеет смысла — вместо
-        // этого просто ничего не делаем, чтобы не удалять текст неожиданно.
         return;
     }
 }
@@ -137,7 +126,6 @@ void Game::renderScriptEditor() {
     drawText(window, font, "Ctrl+Enter: Apply   Esc: Cancel   Ctrl+V: Paste   Ctrl+C: Copy", 18,
              {30.f, 56.f}, sf::Color(150, 150, 150));
 
-    // Текстовая область
     sf::FloatRect textArea(30.f, 96.f, sz.x - 60.f, sz.y - 220.f);
     sf::RectangleShape bg({textArea.width, textArea.height});
     bg.setPosition(textArea.left, textArea.top);
@@ -150,13 +138,8 @@ void Game::renderScriptEditor() {
         sf::Text t(scriptEditText, font, 18);
         t.setFillColor(sf::Color(210, 230, 210));
         t.setPosition(textArea.left + 12.f, textArea.top + 10.f);
-        // Простое масштабирование, чтобы длинный текст не вылезал за рамку по высоте,
-        // визуально это просто моноширинный текст без скролла (для небольших скриптов хватает).
         window.draw(t);
 
-        // Мигающий курсор в конце текста — считаем позицию по ПОСЛЕДНЕЙ строке,
-        // а не по общей ширине текста (иначе на многострочном скрипте курсор
-        // уезжал в сторону самой широкой строки, а не туда, где реально печатается).
         size_t lastNl = scriptEditText.find_last_of('\n');
         std::string lastLine = (lastNl == std::string::npos) ? scriptEditText : scriptEditText.substr(lastNl + 1);
         int lineCount = 1;
@@ -164,7 +147,7 @@ void Game::renderScriptEditor() {
 
         sf::Text lastLineText(lastLine, font, 18);
         float lastLineWidth = lastLineText.getLocalBounds().width;
-        float lineHeight = t.getCharacterSize() * 1.2f; // приблизительный межстрочный интервал sf::Text
+        float lineHeight = t.getCharacterSize() * 1.2f;
 
         if (((int)(goalPulse * 2.f)) % 2 == 0) {
             sf::RectangleShape cursor({2.f, 20.f});
@@ -174,30 +157,20 @@ void Game::renderScriptEditor() {
             window.draw(cursor);
         }
     } else {
-        // Если шрифт не загрузился — редактор всё равно "работает" (текст
-        // копится в scriptEditText), просто SFML нечем его нарисовать. Явно
-        // сообщаем об этом, а не молчим, чтобы не выглядело как "ввод не работает".
         sf::RectangleShape warn({textArea.width - 24.f, 30.f});
         warn.setPosition(textArea.left + 12.f, textArea.top + 10.f);
         warn.setFillColor(sf::Color(120, 40, 40));
         window.draw(warn);
     }
 
-    // ── Диагностика: всегда видимый счётчик введённых символов ─────────────
-    // Не зависит от содержимого scriptEditText — если это число не растёт при
-    // наборе текста, значит клавиши не доходят до handleScriptEditorTextEntered
-    // (проблема в событиях/фокусе окна); если растёт, но текста не видно —
-    // проблема в отрисовке (см. предупреждение выше про шрифт).
     drawText(window, font, "Chars: " + std::to_string(scriptEditText.size()), 22,
              {sz.x - 200.f, 20.f}, sf::Color(255, 220, 60));
 
-    // Сообщение об ошибке компиляции
     if (!scriptEditError.empty()) {
         drawText(window, font, "Error: " + scriptEditError, 16,
                  {30.f, textArea.top + textArea.height + 10.f}, sf::Color(255, 110, 110));
     }
 
-    // Кнопки Apply / Cancel
     sf::Vector2i mi = sf::Mouse::getPosition(window);
     sf::Vector2f mouse = {(float)mi.x, (float)mi.y};
 
